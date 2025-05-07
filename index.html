@@ -42,10 +42,11 @@
 
   <script>
     kakao.maps.load(() => {
-      const map = new kakao.maps.Map(document.getElementById("map"), {
-        center: new kakao.maps.LatLng(36.5, 127.8),
-        level: 8
-      });
+     const map = new kakao.maps.Map(document.getElementById("map"), {
+  center: new kakao.maps.LatLng(36.5, 127.8),
+  level: 13
+});
+
 
       const clusterer = new kakao.maps.MarkerClusterer({
         map: map,
