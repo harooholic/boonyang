@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>청약 단지 지도</title>
+  <meta charset="UTF-8">
+  <title>카카오 지도 - 청약 단지 클러스터</title>
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=6da3e52e562b486ece3ada71e46432ce&autoload=false&libraries=services,clusterer"></script>
   <style>
     body { font-family: sans-serif; }
@@ -23,166 +23,129 @@
       padding: 4px;
       font-size: 14px;
     }
-    #legend {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      z-index: 10;
-      background: white;
-      padding: 8px;
-      border-radius: 5px;
-      font-size: 13px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .legend-icon {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      margin-right: 6px;
-      border-radius: 50%;
-      vertical-align: middle;
-    }
   </style>
 </head>
 <body>
   <div id="controls">
     <input type="text" id="searchInput" placeholder="단지명을 입력하세요" />
-    <select id="regionFilter"><option value="">전체 지역</option></select>
-    <select id="yearFilter"><option value="">전체 연도</option></select>
+    <select id="regionFilter">
+      <option value="">전체 지역</option>
+    </select>
+    <select id="yearFilter">
+      <option value="">전체 연도</option>
+    </select>
   </div>
-
-  <div id="legend">
-    <strong>범례</strong><br>
-    <div><span class="legend-icon" style="background: red;"></span> 최근 1개월</div>
-    <div><span class="legend-icon" style="background: orange;"></span> 1개월 ~ 1년</div>
-    <div><span class="legend-icon" style="background: yellow;"></span> 1년 이상</div>
-  </div>
-
   <div id="map"></div>
+
+  <!-- 데이터 파일 -->
   <script src="aptData_detailed_20240507.js"></script>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      kakao.maps.load(() => {
-        const map = new kakao.maps.Map(document.getElementById("map"), {
-          center: new kakao.maps.LatLng(36.5, 127.8),
-          level: 8
-        });
-
-        const clusterer = new kakao.maps.MarkerClusterer({
-          map: map,
-          averageCenter: true,
-          minLevel: 6
-        });
-
-        let infowindow = new kakao.maps.InfoWindow();
-        let currentOpenMarker = null;
-
-        function extractRegion(address) {
-          return address ? address.split(" ")[0] : "";
-        }
-
-        function extractYear(info) {
-          const match = info.match(/모집공고일:\s*(\d{4})/);
-          return match ? match[1] : "";
-        }
-
-        function getMarkerColor(info) {
-          const match = info.match(/모집공고일:\s*(\d{4})\.(\d{2})\.(\d{2})/);
-          if (!match) return "gray";
-          const [_, y, m, d] = match;
-          const date = new Date(+y, +m - 1, +d);
-          const now = new Date();
-          const diff = (now - date) / (1000 * 60 * 60 * 24);
-          if (diff <= 31) return "red";
-          else if (diff <= 365) return "orange";
-          else return "yellow";
-        }
-
-        const regions = [...new Set(aptData.map(d => extractRegion(d.address)))].sort();
-        regions.forEach(region => {
-          const opt = document.createElement("option");
-          opt.value = region;
-          opt.textContent = region;
-          regionFilter.appendChild(opt);
-        });
-
-        const years = [...new Set(aptData.map(d => extractYear(d.info)).filter(Boolean))].sort((a, b) => b - a);
-        years.forEach(year => {
-          const opt = document.createElement("option");
-          opt.value = year;
-          opt.textContent = `${year}년`;
-          yearFilter.appendChild(opt);
-        });
-
-        function renderMarkers(keyword = "", region = "", year = "") {
-          clusterer.clear();
-          infowindow.close();
-          currentOpenMarker = null;
-
-          const filtered = aptData.filter(item => {
-            const name = item.name || "";
-            const reg = extractRegion(item.address || "");
-            const yr = extractYear(item.info || "");
-            return (!keyword || name.includes(keyword)) &&
-                   (!region || reg === region) &&
-                   (!year || yr === year);
-          });
-
-          const markers = filtered.map(item => {
-            const color = getMarkerColor(item.info);
-            const marker = new kakao.maps.Marker({
-              position: new kakao.maps.LatLng(item.lat, item.lng),
-              title: item.name,
-              image: new kakao.maps.MarkerImage(
-                `http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_${color}.png`,
-                new kakao.maps.Size(24, 35),
-                { offset: new kakao.maps.Point(12, 35) }
-              )
-            });
-
-            const content = `
-              <div style="padding:8px; font-size:13px; max-width:280px;">
-                <strong>${item.name}</strong><br>
-                ${item.info}
-              </div>
-            `;
-
-            kakao.maps.event.addListener(marker, "click", () => {
-              if (currentOpenMarker === marker) {
-                infowindow.close();
-                currentOpenMarker = null;
-              } else {
-                infowindow.setContent(content);
-                infowindow.open(map, marker);
-                currentOpenMarker = marker;
-              }
-            });
-
-            return marker;
-          });
-
-          clusterer.addMarkers(markers);
-        }
-
-        function applyFilters() {
-          const keyword = searchInput.value.trim();
-          const region = regionFilter.value;
-          const year = yearFilter.value;
-          renderMarkers(keyword, region, year);
-        }
-
-        searchInput.addEventListener("input", applyFilters);
-        regionFilter.addEventListener("change", applyFilters);
-        yearFilter.addEventListener("change", applyFilters);
-
-        kakao.maps.event.addListener(map, "click", () => {
-          infowindow.close();
-          currentOpenMarker = null;
-        });
-
-        renderMarkers();
+    kakao.maps.load(() => {
+      const map = new kakao.maps.Map(document.getElementById("map"), {
+        center: new kakao.maps.LatLng(36.5, 127.8),
+        level: 8
       });
+
+      const clusterer = new kakao.maps.MarkerClusterer({
+        map: map,
+        averageCenter: true,
+        minLevel: 6
+      });
+
+      let infowindow = new kakao.maps.InfoWindow();
+      let currentOpenMarker = null;
+
+      function extractRegion(address) {
+        return address ? address.split(" ")[0] : "";
+      }
+
+      function extractYear(info) {
+        const match = info.match(/모집공고일:\s*(\d{4})/);
+        return match ? match[1] : "";
+      }
+
+      // 필터 초기화
+      const regions = [...new Set(aptData.map(d => extractRegion(d.address)))].sort();
+      const regionSelect = document.getElementById("regionFilter");
+      regions.forEach(region => {
+        const opt = document.createElement("option");
+        opt.value = region;
+        opt.textContent = region;
+        regionSelect.appendChild(opt);
+      });
+
+      const years = [...new Set(aptData.map(d => extractYear(d.info)).filter(Boolean))].sort((a, b) => b - a);
+      const yearSelect = document.getElementById("yearFilter");
+      years.forEach(year => {
+        const opt = document.createElement("option");
+        opt.value = year;
+        opt.textContent = `${year}년`;
+        yearSelect.appendChild(opt);
+      });
+
+      function renderMarkers(filterText = "", selectedRegion = "", selectedYear = "") {
+        clusterer.clear();
+        infowindow.close();
+        currentOpenMarker = null;
+
+        const filtered = aptData.filter(item => {
+          const name = item.name || "";
+          const region = extractRegion(item.address || "");
+          const year = extractYear(item.info || "");
+
+          return (!filterText || name.includes(filterText)) &&
+                 (!selectedRegion || region === selectedRegion) &&
+                 (!selectedYear || year === selectedYear);
+        });
+
+        const newMarkers = filtered.map(item => {
+          const marker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(item.lat, item.lng),
+            title: item.name
+          });
+
+          const content = `
+            <div style="padding:8px; font-size:13px; max-width:280px;">
+              <strong>${item.name}</strong><br>
+              ${item.info}
+            </div>
+          `;
+
+          kakao.maps.event.addListener(marker, "click", () => {
+            if (currentOpenMarker === marker) {
+              infowindow.close();
+              currentOpenMarker = null;
+            } else {
+              infowindow.setContent(content);
+              infowindow.open(map, marker);
+              currentOpenMarker = marker;
+            }
+          });
+
+          return marker;
+        });
+
+        clusterer.addMarkers(newMarkers);
+      }
+
+      function applyFilters() {
+        const keyword = document.getElementById("searchInput").value.trim();
+        const region = document.getElementById("regionFilter").value;
+        const year = document.getElementById("yearFilter").value;
+        renderMarkers(keyword, region, year);
+      }
+
+      document.getElementById("searchInput").addEventListener("input", applyFilters);
+      document.getElementById("regionFilter").addEventListener("change", applyFilters);
+      document.getElementById("yearFilter").addEventListener("change", applyFilters);
+
+      kakao.maps.event.addListener(map, "click", () => {
+        infowindow.close();
+        currentOpenMarker = null;
+      });
+
+      renderMarkers();
     });
   </script>
 </body>
