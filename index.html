@@ -74,7 +74,7 @@
       const extractCity = address => address?.split(" ")[1] || "";
       const extractYear = info => (info.match(/모집공고일:\s*(\d{4})/) || [])[1] || "";
       const extractField = (info, key) => {
-        const match = info.match(new RegExp(`${key}:\\s*([^\n]+)`));
+        const match = info.match(new RegExp(`${key}:\s*([^\n]+)`));
         return match ? match[1].trim() : "-";
       };
 
@@ -115,7 +115,8 @@
             title: item.name
           });
 
-          const content = `<div style='padding:8px;font-size:13px;max-width:280px;'><strong>${item.name}</strong><br>${item.info}</div>`;
+          const content = `<div style='padding:8px;font-size:13px;max-width:280px;'><strong>${item.name}</strong><br>\${item.info.replace(`모집공고일: ${extractField(item.info, "모집공고일")}\n`, "").replace(`공급규모: ${extractField(item.info, "공급규모")}\n`, "")}</div>`;
+
           kakao.maps.event.addListener(marker, "click", () => {
             if (currentOpenMarker === marker) {
               infowindow.close(); currentOpenMarker = null;
