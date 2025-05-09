@@ -20,8 +20,8 @@
       background: white; z-index: 1000; overflow: auto; border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3); padding: 16px;
     }
-    #listPanel table { width: 100%; border-collapse: collapse; text-align: center; }
-    #listPanel th, #listPanel td { border: 1px solid #ccc; padding: 8px; }
+    #listPanel table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
+    #listPanel th, #listPanel td { border: 1px solid #ccc; padding: 6px; }
     #pagination { margin-top: 10px; text-align: center; }
     .page-btn { margin: 0 5px; cursor: pointer; }
   </style>
@@ -38,7 +38,13 @@
     <h3>단지 목록 <button onclick="toggleList()" style="float:right">X</button></h3>
     <table>
       <thead>
-        <tr><th style="width: 10%">광역지역</th><th style="width: 30%">주소</th><th style="width: 30%">단지명</th><th style="width: 30%">세부정보</th></tr>
+        <tr>
+          <th style="width: 10%">시/도</th>
+          <th style="width: 10%">시/구</th>
+          <th style="width: 30%">주소</th>
+          <th style="width: 20%">단지명</th>
+          <th style="width: 30%">모집공고일 / 공급규모</th>
+        </tr>
       </thead>
       <tbody id="listingTable"></tbody>
     </table>
@@ -64,15 +70,16 @@
       let infowindow = new kakao.maps.InfoWindow();
       let currentOpenMarker = null;
 
-      const extractRegion = address => {
-        const parts = address?.split(" ") || [];
-        return parts.length >= 2 ? `${parts[0]} ${parts[1]}` : parts[0] || "";
+      const extractProvince = address => address?.split(" ")[0] || "";
+      const extractCity = address => address?.split(" ")[1] || "";
+      const extractYear = info => (info.match(/모집공고일:\s*(\d{4})/) || [])[1] || "";
+      const extractField = (info, key) => {
+        const match = info.match(new RegExp(`${key}:\\s*([^\n]+)`));
+        return match ? match[1].trim() : "-";
       };
 
-      const extractYear = info => (info.match(/모집공고일:\s*(\d{4})/) || [])[1] || "";
-
-      const regions = [...new Set(aptData.map(d => extractRegion(d.address)))].sort();
-      regions.forEach(r => {
+      const provinces = [...new Set(aptData.map(d => extractProvince(d.address)))].sort();
+      provinces.forEach(r => {
         const o = document.createElement("option");
         o.value = o.textContent = r;
         regionFilter.appendChild(o);
@@ -97,9 +104,9 @@
 
         currentFiltered = aptData.filter(item => {
           const name = item.name || "";
-          const reg = extractRegion(item.address || "");
+          const prov = extractProvince(item.address || "");
           const yr = extractYear(item.info || "");
-          return (!keyword || name.includes(keyword)) && (!region || reg === region) && (!year || yr === year);
+          return (!keyword || name.includes(keyword)) && (!region || prov === region) && (!year || yr === year);
         });
 
         const markers = currentFiltered.map(item => {
@@ -134,8 +141,13 @@
 
         listingTable.innerHTML = "";
         pageItems.forEach(item => {
+          const prov = extractProvince(item.address);
+          const city = extractCity(item.address);
+          const 모집공고일 = extractField(item.info, "모집공고일");
+          const 공급규모 = extractField(item.info, "공급규모");
+
           const row = document.createElement("tr");
-          row.innerHTML = `<td>${extractRegion(item.address)}</td><td>${item.address}</td><td>${item.name}</td><td style='text-align:left; white-space:pre-line;'>${item.info}</td>`;
+          row.innerHTML = `<td>${prov}</td><td>${city}</td><td>${item.address}</td><td>${item.name}</td><td style='white-space:pre-line;'>모집: ${모집공고일}\n공급: ${공급규모}</td>`;
           listingTable.appendChild(row);
         });
 
