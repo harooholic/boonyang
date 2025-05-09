@@ -78,8 +78,9 @@
       let currentOpenMarker = null;
 
       const extractField = (info, key) => {
-        const match = info.match(new RegExp(`${key}:[^\S\r\n]*([^<\n]+)`));
-        return match ? match[1].trim() : "-";
+        const lines = info.split(/\n|<br\s*\/?/i);
+        const line = lines.find(line => line.includes(key));
+        return line ? line.replace(`${key}:`, "").trim() : "-";
       };
 
       const extractProvince = address => address?.split(" ")[0] || "";
@@ -159,7 +160,7 @@
           const 분양가 = extractField(item.info, "APT 분양가");
           const 발코니 = extractField(item.info, "발코니 분양가");
           const 평당 = extractField(item.info, "APT 평당가");
-          const 합계 = extractField(item.info, "APT\+발코니 평당가");
+          const 합계 = extractField(item.info, "APT+발코니 평당가");
           const 조건 = extractField(item.info, "계약조건");
 
           const row = document.createElement("tr");
