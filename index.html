@@ -80,7 +80,14 @@
       const extractField = (info, key) => {
         const lines = info.split(/\n|<br\s*\/?/i);
         const line = lines.find(line => line.includes(key));
-        return line ? line.replace(`${key}:`, "").trim() : "-";
+        if (!line) return "-";
+        let value = line.replace(`${key}:`, "").trim();
+        if (key === "분양가상한제") {
+          if (value.includes("적용")) return "적용";
+          else if (value.includes("미적용")) return "미적용";
+          else return "-";
+        }
+        return value.replace(/^[^0-9\w\(\)]*/, "").replace(/[><]/g, "").trim();
       };
 
       const extractProvince = address => address?.split(" ")[0] || "";
