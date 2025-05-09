@@ -39,11 +39,18 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 10%">시/도</th>
-          <th style="width: 10%">시/구</th>
-          <th style="width: 30%">주소</th>
-          <th style="width: 20%">단지명</th>
-          <th style="width: 30%">모집공고일 / 공급규모</th>
+          <th>시/도</th>
+          <th>시/구</th>
+          <th>주소</th>
+          <th>단지명</th>
+          <th>모집공고일</th>
+          <th>세대수</th>
+          <th>분양가상한제</th>
+          <th>APT 분양가</th>
+          <th>발코니 분양가</th>
+          <th>APT 평당가</th>
+          <th>APT+발코니 평당가</th>
+          <th>계약조건</th>
         </tr>
       </thead>
       <tbody id="listingTable"></tbody>
@@ -70,13 +77,14 @@
       let infowindow = new kakao.maps.InfoWindow();
       let currentOpenMarker = null;
 
+      const extractField = (info, key) => {
+        const match = info.match(new RegExp(`${key}:[^\S\r\n]*([^\n]+)`));
+        return match ? match[1].trim() : "-";
+      };
+
       const extractProvince = address => address?.split(" ")[0] || "";
       const extractCity = address => address?.split(" ")[1] || "";
       const extractYear = info => (info.match(/모집공고일:\s*(\d{4})/) || [])[1] || "";
-      const extractField = (info, key) => {
-        const match = info.match(new RegExp(`${key}:\s*([^\n]+)`));
-        return match ? match[1].trim() : "-";
-      };
 
       const provinces = [...new Set(aptData.map(d => extractProvince(d.address)))].sort();
       provinces.forEach(r => {
@@ -115,7 +123,7 @@
             title: item.name
           });
 
-          const content = `<div style='padding:8px;font-size:13px;max-width:280px;'><strong>${item.name}</strong><br>\${item.info.replace(`모집공고일: ${extractField(item.info, "모집공고일")}\n`, "").replace(`공급규모: ${extractField(item.info, "공급규모")}\n`, "")}</div>`;
+          const content = `<div style='padding:8px;font-size:13px;max-width:280px;'><strong>${item.name}</strong></div>`;
 
           kakao.maps.event.addListener(marker, "click", () => {
             if (currentOpenMarker === marker) {
@@ -144,11 +152,18 @@
         pageItems.forEach(item => {
           const prov = extractProvince(item.address);
           const city = extractCity(item.address);
-          const 모집공고일 = extractField(item.info, "모집공고일");
-          const 공급규모 = extractField(item.info, "공급규모");
+
+          const 모집 = extractField(item.info, "모집공고일");
+          const 세대 = extractField(item.info, "공급규모");
+          const 상한 = extractField(item.info, "분양가상한제");
+          const 분양가 = extractField(item.info, "APT 분양가");
+          const 발코니 = extractField(item.info, "발코니 분양가");
+          const 평당 = extractField(item.info, "APT 평당가");
+          const 합계 = extractField(item.info, "APT\+발코니 평당가");
+          const 조건 = extractField(item.info, "계약조건");
 
           const row = document.createElement("tr");
-          row.innerHTML = `<td>${prov}</td><td>${city}</td><td>${item.address}</td><td>${item.name}</td><td style='white-space:pre-line;'>모집: ${모집공고일}\n공급: ${공급규모}</td>`;
+          row.innerHTML = `<td>${prov}</td><td>${city}</td><td>${item.address}</td><td>${item.name}</td><td>${모집}</td><td>${세대}</td><td>${상한}</td><td>${분양가}</td><td>${발코니}</td><td>${평당}</td><td>${합계}</td><td>${조건}</td>`;
           listingTable.appendChild(row);
         });
 
