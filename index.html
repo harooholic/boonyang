@@ -38,7 +38,7 @@
     <h3>단지 목록 <button onclick="toggleList()" style="float:right">X</button></h3>
     <table>
       <thead>
-        <tr><th style="width: 10%">시/도</th><th style="width: 30%">주소</th><th style="width: 30%">단지명</th><th style="width: 30%">세부정보</th></tr>
+        <tr><th style="width: 10%">광역지역</th><th style="width: 30%">주소</th><th style="width: 30%">단지명</th><th style="width: 30%">세부정보</th></tr>
       </thead>
       <tbody id="listingTable"></tbody>
     </table>
@@ -64,7 +64,11 @@
       let infowindow = new kakao.maps.InfoWindow();
       let currentOpenMarker = null;
 
-      const extractRegion = address => address?.split(" ")[0] || "";
+      const extractRegion = address => {
+        const parts = address?.split(" ") || [];
+        return parts.length >= 2 ? `${parts[0]} ${parts[1]}` : parts[0] || "";
+      };
+
       const extractYear = info => (info.match(/모집공고일:\s*(\d{4})/) || [])[1] || "";
 
       const regions = [...new Set(aptData.map(d => extractRegion(d.address)))].sort();
