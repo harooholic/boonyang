@@ -78,7 +78,7 @@
       let currentOpenMarker = null;
 
       const extractField = (info, key) => {
-        const match = info.match(new RegExp(`${key}:[^\S\r\n]*([^\n]+)`));
+        const match = info.match(new RegExp(`${key}:[^\S\r\n]*([^<\n]+)`));
         return match ? match[1].trim() : "-";
       };
 
@@ -154,7 +154,7 @@
           const city = extractCity(item.address);
 
           const 모집 = extractField(item.info, "모집공고일");
-          const 세대 = extractField(item.info, "공급규모");
+          const 세대 = extractField(item.info, "세대수");
           const 상한 = extractField(item.info, "분양가상한제");
           const 분양가 = extractField(item.info, "APT 분양가");
           const 발코니 = extractField(item.info, "발코니 분양가");
