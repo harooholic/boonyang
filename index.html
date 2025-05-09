@@ -22,6 +22,8 @@
     }
     #listPanel table { width: 100%; border-collapse: collapse; text-align: center; }
     #listPanel th, #listPanel td { border: 1px solid #ccc; padding: 8px; }
+    #pagination { margin-top: 10px; text-align: center; }
+    .page-btn { margin: 0 5px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -36,10 +38,11 @@
     <h3>단지 목록 <button onclick="toggleList()" style="float:right">X</button></h3>
     <table>
       <thead>
-        <tr><th>시/도</th><th>주소</th><th>단지명</th><th>세부정보</th></tr>
+        <tr><th style="width: 10%">시/도</th><th style="width: 30%">주소</th><th style="width: 30%">단지명</th><th style="width: 30%">세부정보</th></tr>
       </thead>
       <tbody id="listingTable"></tbody>
     </table>
+    <div id="pagination"></div>
   </div>
 
   <div id="map"></div>
@@ -78,20 +81,24 @@
         yearFilter.appendChild(o);
       });
 
+      let currentFiltered = [];
+      let currentPage = 1;
+      const itemsPerPage = 20;
+
       function renderMarkers(keyword = "", region = "", year = "") {
         clusterer.clear();
         infowindow.close();
         currentOpenMarker = null;
         listingTable.innerHTML = "";
 
-        const filtered = aptData.filter(item => {
+        currentFiltered = aptData.filter(item => {
           const name = item.name || "";
           const reg = extractRegion(item.address || "");
           const yr = extractYear(item.info || "");
           return (!keyword || name.includes(keyword)) && (!region || reg === region) && (!year || yr === year);
         });
 
-        const markers = filtered.map(item => {
+        const markers = currentFiltered.map(item => {
           const marker = new kakao.maps.Marker({
             position: new kakao.maps.LatLng(item.lat, item.lng),
             title: item.name
@@ -108,14 +115,37 @@
             }
           });
 
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${extractRegion(item.address)}</td><td>${item.address}</td><td>${item.name}</td><td>${item.info}</td>`;
-          listingTable.appendChild(row);
-
           return marker;
         });
 
         clusterer.addMarkers(markers);
+        renderListPage(1);
+      }
+
+      function renderListPage(page) {
+        currentPage = page;
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const pageItems = currentFiltered.slice(start, end);
+
+        listingTable.innerHTML = "";
+        pageItems.forEach(item => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${extractRegion(item.address)}</td><td>${item.address}</td><td>${item.name}</td><td style='text-align:left; white-space:pre-line;'>${item.info}</td>`;
+          listingTable.appendChild(row);
+        });
+
+        const totalPages = Math.ceil(currentFiltered.length / itemsPerPage);
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement("span");
+          btn.textContent = i;
+          btn.className = "page-btn";
+          btn.style.fontWeight = i === currentPage ? "bold" : "normal";
+          btn.onclick = () => renderListPage(i);
+          pagination.appendChild(btn);
+        }
       }
 
       function applyFilters() {
