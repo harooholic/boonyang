@@ -124,7 +124,9 @@
             title: item.name
           });
 
-          const content = `<div style='padding:8px;font-size:13px;max-width:280px;'><strong>${item.name}</strong></div>`;
+          const content = `<div style='padding:8px;font-size:13px;max-width:280px;'>
+            <strong>${item.name}</strong><br>${item.info.replace(/\n/g, '<br>')}
+          </div>`;
 
           kakao.maps.event.addListener(marker, "click", () => {
             if (currentOpenMarker === marker) {
