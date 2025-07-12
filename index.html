@@ -67,146 +67,112 @@
       panel.style.display = panel.style.display === "none" ? "block" : "none";
     }
 
-    kakao.maps.load(() => {
-      const map = new kakao.maps.Map(document.getElementById("map"), {
-        center: new kakao.maps.LatLng(36.5, 127.8),
-        level: 13
-      });
-
-      const clusterer = new kakao.maps.MarkerClusterer({ map, averageCenter: true, minLevel: 6 });
-      let infowindow = new kakao.maps.InfoWindow();
-      let currentOpenMarker = null;
-
-      const extractField = (info, key) => {
-        const lines = info.split(/\n|<br\s*\/?>/i);
-        const match = lines.find(line => line.includes(key));
-        if (!match) return "-";
-        let value = match.replace(`${key}:`, "").trim();
-        if (key === "분양가상한제") {
-          if (value.includes("적용")) return "적용";
-          if (value.includes("미적용")) return "미적용";
-          return "-";
-        }
-        return value.replace(/[><]/g, "").trim();
-      };
-
-      const extractProvince = addr => addr?.split(" ")[0] || "";
-      const extractCity = addr => addr?.split(" ")[1] || "";
-      const extractYear = info => (info.match(/모집공고일:\s*(\d{4})/) || [])[1] || "";
-
-      const provinces = [...new Set(aptData.map(d => extractProvince(d.address)))].sort();
-      provinces.forEach(r => {
-        const o = document.createElement("option");
-        o.value = o.textContent = r;
-        regionFilter.appendChild(o);
-      });
-
-      const years = [...new Set(aptData.map(d => extractYear(d.info)).filter(Boolean))].sort((a, b) => b - a);
-      years.forEach(y => {
-        const o = document.createElement("option");
-        o.value = y; o.textContent = `${y}년`;
-        yearFilter.appendChild(o);
-      });
-
-      let currentFiltered = [];
-      let currentPage = 1;
-      const itemsPerPage = 20;
-
-      function renderMarkers(keyword = "", region = "", year = "") {
-        clusterer.clear();
-        infowindow.close();
-        currentOpenMarker = null;
-        listingTable.innerHTML = "";
-
-        currentFiltered = aptData.filter(item => {
-          const name = item.name || "";
-          const prov = extractProvince(item.address || "");
-          const yr = extractYear(item.info || "");
-          return (!keyword || name.includes(keyword)) && (!region || prov === region) && (!year || yr === year);
-        });
-
-        const markers = currentFiltered.map(item => {
-          const marker = new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(item.lat, item.lng),
-            title: item.name
-          });
-
-          const content = `<div style='padding:8px;font-size:13px;max-width:280px;'><strong>${item.name}</strong><br>${item.info.replace(/\n/g, '<br>')}</div>`;
-
-          kakao.maps.event.addListener(marker, "click", () => {
-            if (currentOpenMarker === marker) {
-              infowindow.close(); currentOpenMarker = null;
-            } else {
-              infowindow.setContent(content);
-              infowindow.open(map, marker);
-              currentOpenMarker = marker;
-            }
-          });
-
-          return marker;
-        });
-
-        clusterer.addMarkers(markers);
-        renderListPage(1);
-      }
-
-      function renderListPage(page) {
-        currentPage = page;
-        const start = (page - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        const pageItems = currentFiltered.slice(start, end);
-
-        listingTable.innerHTML = "";
-        pageItems.forEach(item => {
-          const prov = extractProvince(item.address);
-          const city = extractCity(item.address);
-
-          const 모집 = extractField(item.info, "모집공고일");
-          const 세대 = extractField(item.info, "세대수");
-          const 상한 = extractField(item.info, "분양가상한제");
-          const 분양가 = extractField(item.info, "APT 분양가");
-          const 발코니 = extractField(item.info, "발코니 분양가");
-          const 평당 = extractField(item.info, "APT 평당가");
-          const 합계 = extractField(item.info, "APT+발코니 평당가");
-
-          const 계약 = (() => {
-            const lines = item.info.split(/\n|<br\s*\/?>/i);
-            const filtered = lines.filter(l => l.includes("계약조건") || l.includes("계약금") || l.includes("중도금") || l.includes("잔금"));
-            return filtered.map(l => l.trim().replace("계약조건:", "")).join("<br>");
-          })();
-
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${prov}</td><td>${city}</td><td>${item.address}</td><td>${item.name}</td><td>${모집}</td><td>${세대}</td><td>${상한}</td><td>${분양가}</td><td>${발코니}</td><td>${평당}</td><td>${합계}</td><td>${계약}</td>`;
-          listingTable.appendChild(row);
-        });
-
-        const totalPages = Math.ceil(currentFiltered.length / itemsPerPage);
-        const pagination = document.getElementById("pagination");
-        pagination.innerHTML = "";
-        for (let i = 1; i <= totalPages; i++) {
-          const btn = document.createElement("span");
-          btn.textContent = i;
-          btn.className = "page-btn";
-          btn.style.fontWeight = i === currentPage ? "bold" : "normal";
-          btn.onclick = () => renderListPage(i);
-          pagination.appendChild(btn);
-        }
-      }
-
-      function applyFilters() {
-        const kw = searchInput.value.trim();
-        renderMarkers(kw, regionFilter.value, yearFilter.value);
-      }
-
-      searchInput.addEventListener("input", applyFilters);
-      regionFilter.addEventListener("change", applyFilters);
-      yearFilter.addEventListener("change", applyFilters);
-      kakao.maps.event.addListener(map, "click", () => {
-        infowindow.close(); currentOpenMarker = null;
-      });
-
-      renderMarkers();
+    const map = new kakao.maps.Map(document.getElementById("map"), {
+      center: new kakao.maps.LatLng(36.5, 127.8),
+      level: 13
     });
-  </script>
-</body>
-</html>
+
+    const clusterer = new kakao.maps.MarkerClusterer({ map, averageCenter: true, minLevel: 6 });
+    let infowindow = new kakao.maps.InfoWindow();
+    let currentOpenMarker = null;
+
+    const extractField = (info, key) => {
+      const lines = info.split(/\n|<br\s*\/?>/i);
+      const match = lines.find(line => line.includes(key));
+      if (!match) return "-";
+      let value = match.replace(`${key}:`, "").trim();
+      if (key === "분양가상한제") {
+        if (value.includes("적용")) return "적용";
+        if (value.includes("미적용")) return "미적용";
+        return "-";
+      }
+      return value.replace(/[><]/g, "").trim();
+    };
+
+    const extractProvince = addr => addr?.split(" ")[0] || "";
+    const extractCity = addr => addr?.split(" ")[1] || "";
+    const extractYear = info => (info.match(/모집공고일:\s*(\d{4})/) || [])[1] || "";
+
+    const provinces = [...new Set(aptData.map(d => extractProvince(d.address)))].sort();
+    provinces.forEach(r => {
+      const o = document.createElement("option");
+      o.value = o.textContent = r;
+      regionFilter.appendChild(o);
+    });
+
+    const years = [...new Set(aptData.map(d => extractYear(d.info)).filter(Boolean))].sort((a, b) => b - a);
+    years.forEach(y => {
+      const o = document.createElement("option");
+      o.value = y; o.textContent = `${y}년`;
+      yearFilter.appendChild(o);
+    });
+
+    let currentFiltered = [];
+    let currentPage = 1;
+    const itemsPerPage = 20;
+
+    function renderMarkers(keyword = "", region = "", year = "") {
+      clusterer.clear();
+      infowindow.close();
+      currentOpenMarker = null;
+      listingTable.innerHTML = "";
+
+      currentFiltered = aptData.filter(item => {
+        const name = item.name || "";
+        const prov = extractProvince(item.address || "");
+        const yr = extractYear(item.info || "");
+        return (!keyword || name.includes(keyword)) && (!region || prov === region) && (!year || yr === year);
+      });
+
+      const markers = currentFiltered.map(item => {
+        const marker = new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(item.lat, item.lng),
+          title: item.name
+        });
+
+        const content = `<div style='padding:8px;font-size:13px;max-width:280px;'><strong>${item.name}</strong><br>${item.info.replace(/\n/g, '<br>')}</div>`;
+
+        kakao.maps.event.addListener(marker, "click", () => {
+          if (currentOpenMarker === marker) {
+            infowindow.close(); currentOpenMarker = null;
+          } else {
+            infowindow.setContent(content);
+            infowindow.open(map, marker);
+            currentOpenMarker = marker;
+          }
+        });
+
+        return marker;
+      });
+
+      clusterer.addMarkers(markers);
+      renderListPage(1);
+    }
+
+    function renderListPage(page) {
+      currentPage = page;
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pageItems = currentFiltered.slice(start, end);
+
+      listingTable.innerHTML = "";
+      pageItems.forEach(item => {
+        const prov = extractProvince(item.address);
+        const city = extractCity(item.address);
+
+        const 모집 = extractField(item.info, "모집공고일");
+        const 세대 = extractField(item.info, "세대수");
+        const 상한 = extractField(item.info, "분양가상한제");
+        const 분양가 = extractField(item.info, "APT 분양가");
+        const 발코니 = extractField(item.info, "발코니 분양가");
+        const 평당 = extractField(item.info, "APT 평당가");
+        const 합계 = extractField(item.info, "APT+발코니 평당가");
+
+        const 계약 = (() => {
+          const lines = item.info.split(/\n|<br\s*\/?>/i);
+          const filtered = lines.filter(l => l.includes("계약조건") || l.includes("계약금") || l.includes("중도금") || l.includes("잔금"));
+          return filtered.map(l => l.trim().replace("계약조건:", "")).join("<br>");
+        })();
+
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${prov}</td><td>${city}</td><td>${item.address}</td><td>${item.name}</td><td>${모집}</td><td>${세대}</td><td>${상한}</td><td>${분양가}</td><td>${발코니}</td><td>${평당}</td><td>${합계}</td><td>${계약}<
