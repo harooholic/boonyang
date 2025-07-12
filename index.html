@@ -175,4 +175,36 @@
         })();
 
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${prov}</td><td>${city}</td><td>${item.address}</td><td>${item.name}</td><td>${모집}</td><td>${세대}</td><td>${상한}</td><td>${분양가}</td><td>${발코니}</td><td>${평당}</td><td>${합계}</td><td>${계약}<
+        row.innerHTML = `<td>${prov}</td><td>${city}</td><td>${item.address}</td><td>${item.name}</td><td>${모집}</td><td>${세대}</td><td>${상한}</td><td>${분양가}</td><td>${발코니}</td><td>${평당}</td><td>${합계}</td><td>${계약}</td>`;
+        listingTable.appendChild(row);
+      });
+
+      const totalPages = Math.ceil(currentFiltered.length / itemsPerPage);
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = "";
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("span");
+        btn.textContent = i;
+        btn.className = "page-btn";
+        btn.style.fontWeight = i === currentPage ? "bold" : "normal";
+        btn.onclick = () => renderListPage(i);
+        pagination.appendChild(btn);
+      }
+    }
+
+    function applyFilters() {
+      const kw = searchInput.value.trim();
+      renderMarkers(kw, regionFilter.value, yearFilter.value);
+    }
+
+    searchInput.addEventListener("input", applyFilters);
+    regionFilter.addEventListener("change", applyFilters);
+    yearFilter.addEventListener("change", applyFilters);
+    kakao.maps.event.addListener(map, "click", () => {
+      infowindow.close(); currentOpenMarker = null;
+    });
+
+    renderMarkers();
+  </script>
+</body>
+</html>
